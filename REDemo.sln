@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31624.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "REDemo", "REDemo\REDemo.vcxproj", "{345BC52A-E7E7-4499-B0FA-B5917945CEE8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{345BC52A-E7E7-4499-B0FA-B5917945CEE8}.Debug|x64.ActiveCfg = Debug|x64
+		{345BC52A-E7E7-4499-B0FA-B5917945CEE8}.Debug|x64.Build.0 = Debug|x64
+		{345BC52A-E7E7-4499-B0FA-B5917945CEE8}.Debug|x86.ActiveCfg = Debug|Win32
+		{345BC52A-E7E7-4499-B0FA-B5917945CEE8}.Debug|x86.Build.0 = Debug|Win32
+		{345BC52A-E7E7-4499-B0FA-B5917945CEE8}.Release|x64.ActiveCfg = Release|x64
+		{345BC52A-E7E7-4499-B0FA-B5917945CEE8}.Release|x64.Build.0 = Release|x64
+		{345BC52A-E7E7-4499-B0FA-B5917945CEE8}.Release|x86.ActiveCfg = Release|Win32
+		{345BC52A-E7E7-4499-B0FA-B5917945CEE8}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2BD3FD20-A09E-4CE0-9FB6-A09757FF2B57}
+	EndGlobalSection
+EndGlobal
