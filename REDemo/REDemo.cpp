@@ -300,10 +300,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             break;
         }
-
         case 3:
             //BasicFileOpen();
             break;
+        // Copy
+        case 11:
+            MessageBox(hWnd, L"Copy Selected", L"Info", MB_OK);
+            break;
+        // Paste
+        case 12:
+        {
+            break;
+        }
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
         }
@@ -321,10 +329,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         if ((HWND)wParam == hwndEdit)
         {
+            BOOL bCanPaste = SendMessage(hwndEdit, EM_CANPASTE, 0, 0);
+            CHARRANGE cr;
+            SendMessage(hwndEdit, EM_EXGETSEL, 0, (LPARAM)&cr);
+            BOOL bCanCopy = cr.cpMin == cr.cpMax ? FALSE : TRUE;
+
             int xPos = GET_X_LPARAM(lParam), yPos = GET_Y_LPARAM(lParam);
             HMENU hMenu = CreatePopupMenu();
-            AppendMenuW(hMenu, MF_ENABLED | MF_STRING, 1, L"¸´ÖÆ");
-            AppendMenuW(hMenu, MF_ENABLED | MF_STRING, 1, L"Õ³Ìù");
+            AppendMenuW(hMenu, (bCanCopy ? MF_ENABLED : MF_DISABLED) | MF_STRING, 11, L"¸´ÖÆ");
+            AppendMenuW(hMenu, (bCanPaste ? MF_ENABLED : MF_DISABLED) | MF_STRING, 12, L"Õ³Ìù");
             TrackPopupMenuEx(hMenu, TPM_LEFTALIGN | TPM_TOPALIGN, xPos, yPos, hWnd, NULL);
         }
         break;
