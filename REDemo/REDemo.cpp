@@ -5,6 +5,10 @@
 #include "REDemo.h"
 #include "RichEdit.h"
 #include "Richole.h"
+#include "commdlg.h"
+#include "windowsx.h"
+
+#include <string>
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
@@ -206,6 +210,34 @@ BOOL InsertObject(HWND hRichEdit, LPCTSTR pszFileName)
     return TRUE;
 }
 
+std::wstring SelectFile(HWND hwnd)
+{
+    OPENFILENAMEW ofn;
+    std::wstring name_buf;
+    name_buf.resize(1024);
+
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hwnd;
+    ofn.lpstrFile = &name_buf[0];
+    // Set lpstrFile[0] to '\0' so that GetOpenFileName does not
+    // use the contents of szFile to initialize itself.
+    ofn.lpstrFile[0] = '\0';
+    ofn.nMaxFile = name_buf.size();
+    ofn.lpstrFilter = L"Source\0*.C;*.CXX\0All\0*.*\0";
+    ofn.nFilterIndex = 2;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    if (!GetOpenFileName(&ofn))
+    {
+        name_buf.clear();
+    }
+
+    return name_buf;
+}
+
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -260,8 +292,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DestroyWindow(hWnd);
             break;
         case 2:
-            //MessageBoxW(hWnd, L"按钮被单击", L"警告", MB_ICONWARNING);
-            InsertObject(hwndEdit, L"C:\\Users\\zhuoq\\Desktop\\1.txt");
+        {
+            std::wstring file = SelectFile(hWnd);
+            if (!file.empty())
+            {
+                InsertObject(hwndEdit, file.c_str());
+            }
+            break;
+        }
+
+        case 3:
+            //BasicFileOpen();
             break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
@@ -276,6 +317,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         EndPaint(hWnd, &ps);
     }
     break;
+    case WM_CONTEXTMENU:
+    {
+        if ((HWND)wParam == hwndEdit)
+        {
+            int xPos = GET_X_LPARAM(lParam), yPos = GET_Y_LPARAM(lParam);
+            HMENU hMenu = CreatePopupMenu();
+            AppendMenuW(hMenu, MF_ENABLED | MF_STRING, 1, L"复制");
+            AppendMenuW(hMenu, MF_ENABLED | MF_STRING, 1, L"粘贴");
+            TrackPopupMenuEx(hMenu, TPM_LEFTALIGN | TPM_TOPALIGN, xPos, yPos, hWnd, NULL);
+        }
+        break;
+    }
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
