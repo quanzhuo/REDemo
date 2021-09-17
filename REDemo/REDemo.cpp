@@ -9,6 +9,7 @@
 #include "windowsx.h"
 
 #include <string>
+#include <fstream>
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
@@ -250,33 +251,54 @@ std::wstring SelectFile(HWND hwnd)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static HWND hwndEdit, hwndBtnInsertFile, hwndBtnInsertImage;
+    static HWND hwndRichEdit, hwndEdit, hwndBtnInsertFile, hwndBtnInsertImage;
+    static HWND hwndBtnPasteWin32ClipBoard, hwndBtnPasteOleClipBoard, hwndBtnGetConent;
     switch (message)
     {
     case WM_CREATE:
     {
         LoadLibrary(TEXT("MSFTEDIT.dll"));
-        hwndEdit = CreateWindowEx(0, MSFTEDIT_CLASS, TEXT("Type here"),
+        hwndRichEdit = CreateWindowEx(0, MSFTEDIT_CLASS, TEXT("Type here"),
             ES_MULTILINE | WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP | WS_VSCROLL | WS_HSCROLL,
-            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 
-            hWnd, (HMENU)1, hInst, NULL);
+            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+            hWnd, (HMENU)IDR_RE, hInst, NULL);
+
+        hwndEdit = CreateWindowEx(0, L"Edit", L"This edit control is used to logging some messages",
+            WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL,
+            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+            hWnd, (HMENU)IDE_EDIT, hInst, NULL);
+
         hwndBtnInsertFile = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Insert File"),
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
             CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-            hWnd, (HMENU)2, hInst, NULL);
+            hWnd, (HMENU)IDB_INSERT_FILE, hInst, NULL);
         hwndBtnInsertImage = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Insert Image"),
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
             CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-            hWnd, (HMENU)3, hInst, NULL);
+            hWnd, (HMENU)IDB_INSERT_IMAGE, hInst, NULL);
+        hwndBtnPasteWin32ClipBoard = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Paste From Win32 ClipBoard"),
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, CW_USEDEFAULT, CW_USEDEFAULT,
+            CW_USEDEFAULT, CW_USEDEFAULT, hWnd, (HMENU)IDB_PASTE_WIN32, hInst, NULL);
+        hwndBtnPasteOleClipBoard = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Paste From OLE ClipBoard"),
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, CW_USEDEFAULT, CW_USEDEFAULT,
+            CW_USEDEFAULT, CW_USEDEFAULT, hWnd, (HMENU)IDB_PASTE_OLE, hInst, NULL);
+        hwndBtnGetConent = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Get RichEdit Content"),
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, CW_USEDEFAULT, CW_USEDEFAULT,
+            CW_USEDEFAULT, CW_USEDEFAULT, hWnd, (HMENU)IDB_GET_CONTENT, hInst, NULL);
         break;
     }
     case WM_SIZE:
     {
         WORD cx = LOWORD(lParam), cy = HIWORD(lParam);
-        int btnHeight = 50, vmargin = 10, hmargin = 10, btnWidth = 200;
-        SetWindowPos(hwndEdit, HWND_TOP, 0, btnHeight+vmargin, cx, cy - btnHeight-vmargin, SWP_SHOWWINDOW);
-        SetWindowPos(hwndBtnInsertFile, HWND_TOP, 0, 0,  btnWidth, btnHeight, SWP_SHOWWINDOW);
+        int btnHeight = 50, vmargin = 10, hmargin = 10, btnWidth = 200, btnWidthWide = 300;
+        SetWindowPos(hwndRichEdit, HWND_TOP, 0, btnHeight + vmargin, cx * 2 / 3, cy - btnHeight - vmargin, SWP_SHOWWINDOW);
+        SetWindowPos(hwndEdit, HWND_TOP, cx * 2 / 3 + hmargin, +btnHeight + vmargin, cx / 3 - hmargin, cy - btnHeight - vmargin, SWP_SHOWWINDOW);
+        SetWindowPos(hwndBtnInsertFile, HWND_TOP, 0, 0, btnWidth, btnHeight, SWP_SHOWWINDOW);
         SetWindowPos(hwndBtnInsertImage, HWND_TOP, btnWidth + hmargin, 0, btnWidth, btnHeight, SWP_SHOWWINDOW);
+        SetWindowPos(hwndBtnPasteWin32ClipBoard, HWND_TOP, (btnWidth + hmargin) * 2, 0, btnWidthWide, btnHeight, SWP_SHOWWINDOW);
+        SetWindowPos(hwndBtnPasteOleClipBoard, HWND_TOP, btnWidth * 2 + hmargin * 3 + btnWidthWide, 0, btnWidthWide, btnHeight, SWP_SHOWWINDOW);
+        SetWindowPos(hwndBtnGetConent, HWND_TOP, btnWidth * 2 + hmargin * 4 + btnWidthWide * 2, 0, btnWidthWide, btnHeight, SWP_SHOWWINDOW);
+
         break;
     }
     case WM_COMMAND:
@@ -291,24 +313,66 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case IDM_EXIT:
             DestroyWindow(hWnd);
             break;
-        case 2:
+        case IDB_INSERT_FILE:
         {
             std::wstring file = SelectFile(hWnd);
             if (!file.empty())
             {
-                InsertObject(hwndEdit, file.c_str());
+                InsertObject(hwndRichEdit, file.c_str());
             }
             break;
         }
-        case 3:
+        case IDB_INSERT_IMAGE:
             //BasicFileOpen();
             break;
+            // Past From Win32 ClipBoard
+        case IDB_PASTE_WIN32:
+        {
+            if (IsClipboardFormatAvailable(CF_BITMAP))
+            {
+                OpenClipboard(NULL);
+                HGLOBAL hGlobal = GetClipboardData(CF_BITMAP);
+                if (hGlobal && hGlobal != INVALID_HANDLE_VALUE)
+                {
+                    void* bitmap = (void*)hGlobal;
+                    if (bitmap)
+                    {
+                        BITMAPINFOHEADER* info = reinterpret_cast<BITMAPINFOHEADER*>(bitmap);
+                        BITMAPFILEHEADER fileHeader = { 0 };
+                        fileHeader.bfType = 0x4D42;
+                        fileHeader.bfOffBits = 54;
+                        //fileHeader.bfSize = (((info->biWidth * info->biBitCount + 31) & ~31) / 8
+                        //    * info->biHeight) + fileHeader.bfOffBits;
+
+                        std::ofstream file("C:/Users/quanzhuo/Desktop/Test.bmp", std::ios::out | std::ios::binary);
+                        if (file)
+                        {
+                            file.write(reinterpret_cast<char*>(&fileHeader), sizeof(BITMAPFILEHEADER));
+                            file.write(reinterpret_cast<char*>(info), sizeof(BITMAPINFOHEADER));
+                            file.write(reinterpret_cast<char*>(++info), info->biSizeImage);
+                        }
+                    }
+                    //GlobalUnlock(hGlobal);
+                }
+                CloseClipboard();
+            }
+            break;
+        }
+        // Paste from ole clipboard
+        case IDB_PASTE_OLE:
+        {
+            break;
+        }
+        case IDB_GET_CONTENT:
+        {
+            break;
+        }
         // Copy
-        case 11:
+        case IDM_COPY:
             MessageBox(hWnd, L"Copy Selected", L"Info", MB_OK);
             break;
-        // Paste
-        case 12:
+            // Paste
+        case IDM_PASTE:
         {
             break;
         }
@@ -327,11 +391,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     break;
     case WM_CONTEXTMENU:
     {
-        if ((HWND)wParam == hwndEdit)
+        if ((HWND)wParam == hwndRichEdit)
         {
-            BOOL bCanPaste = SendMessage(hwndEdit, EM_CANPASTE, 0, 0);
+            BOOL bCanPaste = SendMessage(hwndRichEdit, EM_CANPASTE, 0, 0);
             CHARRANGE cr;
-            SendMessage(hwndEdit, EM_EXGETSEL, 0, (LPARAM)&cr);
+            SendMessage(hwndRichEdit, EM_EXGETSEL, 0, (LPARAM)&cr);
             BOOL bCanCopy = cr.cpMin == cr.cpMax ? FALSE : TRUE;
 
             int xPos = GET_X_LPARAM(lParam), yPos = GET_Y_LPARAM(lParam);
