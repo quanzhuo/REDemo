@@ -334,7 +334,7 @@ std::wstring SelectFile(HWND hwnd, PCWSTR ext)
     return name_buf;
 }
 
-BOOL RE_InsertBitmapFromOleClipBoard(HWND hwnd)
+BOOL RE_InsertBitmapFromOleClipBoard(HWND hwnd, HWND hwndEdit)
 {
     HRESULT hr;
     IDataObject* pDataObject;
@@ -437,6 +437,18 @@ BOOL RE_InsertBitmapFromOleClipBoard(HWND hwnd)
     reobject.cbStruct = sizeof(REOBJECT);
 
     sc = lpOleObject->GetUserClassID(&clsid);
+
+    // Update Edit Control Text
+    OLECHAR* guidString;
+    StringFromCLSID(clsid, &guidString);
+    std::wstring text;
+    int len = Edit_GetTextLength(hwnd);
+    text.resize(len+1);
+    Edit_GetText(hwndEdit, &text[0], len+1);
+    if (text.back() == '\0') text.pop_back();
+    text.append(L"\n, clsid is: ").append(guidString).append(L"\n");
+    ::CoTaskMemFree(guidString);
+    Edit_SetText(hwndEdit, text.c_str());
 
     reobject.clsid = clsid;
     reobject.cp = REO_CP_SELECTION;
@@ -717,8 +729,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE:
     {
-        LoadLibrary(TEXT("MSFTEDIT.dll"));
-        hwndRichEdit = CreateWindowEx(0, MSFTEDIT_CLASS, TEXT("Type here"),
+        LoadLibrary(TEXT("Riched20.dll"));
+        hwndRichEdit = CreateWindowEx(0, RICHEDIT_CLASS, TEXT("Type here"),
             ES_MULTILINE | WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP | WS_VSCROLL | WS_HSCROLL,
             CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
             hWnd, (HMENU)IDR_RE, hInst, NULL);
@@ -829,7 +841,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         // Paste from ole clipboard
         case IDB_PASTE_OLE:
         {
-            RE_InsertBitmapFromOleClipBoard(hwndRichEdit);
+            RE_InsertBitmapFromOleClipBoard(hwndRichEdit, hwndEdit);
             break;
         }
         case IDB_GET_CONTENT:
