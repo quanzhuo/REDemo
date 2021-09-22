@@ -442,11 +442,11 @@ BOOL RE_InsertBitmapFromOleClipBoard(HWND hwnd, HWND hwndEdit)
     OLECHAR* guidString;
     StringFromCLSID(clsid, &guidString);
     std::wstring text;
-    int len = Edit_GetTextLength(hwnd);
+    int len = Edit_GetTextLength(hwndEdit);
     text.resize(len+1);
     Edit_GetText(hwndEdit, &text[0], len+1);
     if (text.back() == '\0') text.pop_back();
-    text.append(L"\n, clsid is: ").append(guidString).append(L"\n");
+    text.append(L"\r\nclsid is: ").append(guidString);
     ::CoTaskMemFree(guidString);
     Edit_SetText(hwndEdit, text.c_str());
 
