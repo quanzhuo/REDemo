@@ -337,13 +337,11 @@ std::wstring SelectFile(HWND hwnd, PCWSTR ext)
 BOOL RE_InsertBitmapFromOleClipBoard(HWND hwnd, HWND hwndEdit)
 {
     HRESULT hr;
-    IDataObject* pDataObject;
+    IDataObject* pDataObject = NULL;
     LPOLEOBJECT lpOleObject = NULL;
     LPSTORAGE lpStorage = NULL;
     LPOLECLIENTSITE lpOleClientSite = NULL;
     LPLOCKBYTES lpLockBytes = NULL;
-    CLIPFORMAT cfFormat = 0;
-    LPFORMATETC lpFormatEtc = NULL;
     FORMATETC formatEtc;
     LPRICHEDITOLE lpRichEditOle;
     SCODE sc;
@@ -365,7 +363,7 @@ BOOL RE_InsertBitmapFromOleClipBoard(HWND hwnd, HWND hwndEdit)
 
     OleGetClipboard(&pDataObject);
     if (pDataObject == NULL)
-        return 0;
+        return FALSE;
 
     // 得到 HBITMAP
     FORMATETC fc;
@@ -399,38 +397,37 @@ BOOL RE_InsertBitmapFromOleClipBoard(HWND hwnd, HWND hwndEdit)
     sz_.cx = bitmap_cx_ > max_cx ? max_cx : bitmap_cx_;
     sz_.cy = (LONG)(sz_.cx * radio);
 
-    sc = CreateILockBytesOnHGlobal(NULL, TRUE, &lpLockBytes);
+    hr = CreateILockBytesOnHGlobal(NULL, TRUE, &lpLockBytes);
     if (lpLockBytes == NULL)
-        return 0;
+        return FALSE;
 
-    sc = StgCreateDocfileOnILockBytes(lpLockBytes,
+    hr = StgCreateDocfileOnILockBytes(lpLockBytes,
         STGM_SHARE_EXCLUSIVE | STGM_CREATE | STGM_READWRITE, 0, &lpStorage);
     if (lpStorage == NULL)
-        return 0;
+        return FALSE;
 
-    lpFormatEtc = &formatEtc;
-    lpFormatEtc->cfFormat = cfFormat;
-    lpFormatEtc->ptd = NULL;
-    lpFormatEtc->dwAspect = DVASPECT_CONTENT;
-    lpFormatEtc->lindex = -1;
-    lpFormatEtc->tymed = TYMED_NULL;
+    formatEtc.cfFormat = CF_BITMAP;
+    formatEtc.ptd = NULL;
+    formatEtc.dwAspect = DVASPECT_CONTENT;
+    formatEtc.lindex = -1;
+    formatEtc.tymed = TYMED_GDI;
 
     SendMessage(hwnd, EM_GETOLEINTERFACE, 0, (LPARAM)&lpRichEditOle);
     if (lpRichEditOle == NULL)
-        return 0;
+        return FALSE;
 
     lpRichEditOle->GetClientSite(&lpOleClientSite);
     if (lpOleClientSite == NULL)
-        return 0;
+        return FALSE;
 
-    hr = OleCreateStaticFromData(pDataObject, IID_IUnknown,
-        OLERENDER_DRAW, lpFormatEtc, lpOleClientSite, lpStorage, (void**)&lpOleObject);
+    hr = OleCreateStaticFromData(pDataObject, IID_IOleObject,
+        OLERENDER_FORMAT, &formatEtc, lpOleClientSite, lpStorage, (void**)&lpOleObject);
     if (lpOleObject == NULL)
-        return 0;
+        return FALSE;
 
-    lpUnknown = (LPUNKNOWN)lpOleObject;
-    lpUnknown->QueryInterface(IID_IOleObject, (void**)&lpOleObject);
-    lpUnknown->Release();
+    //lpUnknown = (LPUNKNOWN)lpOleObject;
+    //lpUnknown->QueryInterface(IID_IOleObject, (void**)&lpOleObject);
+    //lpUnknown->Release();
     OleSetContainedObject((LPUNKNOWN)lpOleObject, TRUE);
 
     ZeroMemory(&reobject, sizeof(REOBJECT));
@@ -478,7 +475,7 @@ BOOL RE_InsertBitmapFromOleClipBoard(HWND hwnd, HWND hwndEdit)
     lpOleObject->Release();
     CoUninitialize();
 
-    return 1;
+    return TRUE;
 }
 
 void errhandler(LPCSTR func, HWND)
